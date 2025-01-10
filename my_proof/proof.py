@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.table import Table
 from my_proof.models.proof_response import ProofResponse
 from my_proof.tests import *
+from my_proof.checks import *
 
 top_weights = {
     'Authenticity':0.2,
@@ -42,16 +43,17 @@ class Proof:
                     input_data = json.load(f)
 
         qualityRes = Quality(input_data, self.aws_access_key_id, self.aws_secret_access_key)
-        self.proof_response.score = (qualityRes['score'])*(len(input_data)/100)
-        self.proof_response.valid = qualityRes['score'] > 0.25
-        self.proof_response.time_minimums = qualityRes['Time_Minimums']['score']
-        self.proof_response.time_correlation = qualityRes['Time_Correlation']['score']
-        self.proof_response.time_distribution = qualityRes['Time_Distribution']['score']
-        self.proof_response.repeat_anwsers = qualityRes['Repeat_Anwsers']['score']
-        self.proof_response.both_sides = qualityRes['Both_Sides']['score']
-        self.proof_response.model_distribution = qualityRes['Model_Distribution']['score']
-        self.proof_response.poison_data = qualityRes['Poisin_Data']['score']
+        #self.proof_response.score = (qualityRes['score'])*(len(input_data)/100)
+        #self.proof_response.valid = qualityRes['score'] > 0.25
+        #self.proof_response.time_minimums = qualityRes['Time_Minimums']['score']
+        #self.proof_response.time_correlation = qualityRes['Time_Correlation']['score']
+        #self.proof_response.time_distribution = qualityRes['Time_Distribution']['score']
+        #self.proof_response.repeat_anwsers = qualityRes['Repeat_Anwsers']['score']
+        #self.proof_response.both_sides = qualityRes['Both_Sides']['score']
+        #self.proof_response.model_distribution = qualityRes['Model_Distribution']['score']
+        #self.proof_response.poison_data = qualityRes['Poisin_Data']['score']
         
+        #how do we want to do this? aws
         self.proof_response.uniqueness = Uniqueness(input_data, self.aws_access_key_id, self.aws_secret_access_key)
 
         # original fields
@@ -72,18 +74,10 @@ class Proof:
         return self.proof_response
 
 def Quality(data_list: List[Dict[str, Any]], aws_access_key_id: str, aws_secret_access_key: str) -> float:
-    report = {
-        'Time_Minimums':Time_Minimums(data_list),
-        'Time_Correlation':Character_Timing(data_list),
-        'Time_Distribution':Time_Distribution(data_list),
-        'Repeat_Anwsers':Duplicate_ID_Check(data_list),
-        'Both_Sides':Choice_Distribution(data_list),
-        'Model_Distribution':Model_Bias(data_list),
-        'Poisin_Data':Poison_Consistency(data_list, aws_access_key_id, aws_secret_access_key),
-        'score':0
-    }
-    report['score'] = sum(test_weights[test] * report[test]['score'] for test in test_weights)
-    return report
+    report = LocationHistoryValidator(max_speed_m_s=44.44)
+    scores  = report.validate(data_list)
+    #report['score'] = sum(test_weights[test] * report[test]['score'] for test in test_weights)
+    return scores
 
 def Uniqueness(data_list: List[Dict[str, Any]], aws_access_key_id: str, aws_secret_access_key: str) -> float:
     hash_manager = HashManager(bucket_name="vanatensordlp", remote_file_key="verified_hashes/hashes.json", aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
