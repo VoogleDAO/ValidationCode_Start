@@ -1,5 +1,6 @@
 from typing import List, Dict, Any
-from aws_interaction import download_json_from_s3
+
+from my_proof.aws_interaction import download_json_from_s3
 
 MINIMUM_TOTAL_AVERAGE_TIME=15 #minimum average time to anwser a questsion
 MINIMUM_CHARACTER_TIME=0.05 #minimum time to anwsers per characters https://irisreading.com/what-is-the-average-reading-speed/
@@ -57,9 +58,7 @@ def Time_Distribution(data_list: List[Dict[str, Any]]) -> Dict[str, Any]:
         # Collect pairs of (char_length, time_taken)
         pairs = []
         for item in data_list:
-            print(item)
             total_char_len = len(item['prompt']) + sum(len(i['response']) for i in item['responses'])
-            print(total_char_len)
             time_taken = float(item['time_taken'])
             pairs.append((total_char_len, time_taken))
         
@@ -227,10 +226,10 @@ def Model_Bias(data_list: List[Dict[str, Any]]) -> Dict[str, Any]:
             'comments': [f'An error occurred while analyzing model bias: {str(e)}']
         }
     
-def Poison_Consistency(data_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+def Poison_Consistency(data_list: List[Dict[str, Any]], aws_access_key_id: str, aws_secret_access_key: str) -> Dict[str, Any]:
     try:
         # Download poisoned data from S3
-        poisoned_data = download_json_from_s3('vanatensorpoisondata', 'poisin.json')
+        poisoned_data = download_json_from_s3('vanatensorpoisondata', 'poisin.json', aws_access_key_id, aws_secret_access_key)
         if not poisoned_data:
             return {
                 'score': 0.0,

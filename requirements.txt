@@ -1,0 +1,5 @@
+pydantic
+requests
+boto3
+python-gnupg
+pgpy

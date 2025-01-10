@@ -2,20 +2,15 @@ import boto3
 import json
 from datetime import datetime
 import logging
-from dotenv import load_dotenv
-import os
 import hashlib
 
 class HashManager:
-    def __init__(self, bucket_name, remote_file_key):
-        # Load environment variables
-        load_dotenv()
-        
+    def __init__(self, bucket_name, remote_file_key, aws_access_key_id, aws_secret_access_key):
         # Initialize S3 client with credentials
         self.s3_client = boto3.client(
             's3',
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key
         )
         self.bucket_name = bucket_name
         self.remote_file_key = remote_file_key
@@ -48,7 +43,7 @@ class HashManager:
             return self._initialize_empty_hash_file()
         except Exception as e:
             logging.error(f"Error fetching remote hashes: {str(e)}")
-            raise
+            return []
 
     def update_remote_hashes(self, new_hashes):
         """Update remote JSON file with new hashes"""
@@ -67,7 +62,7 @@ class HashManager:
             return True
         except Exception as e:
             logging.error(f"Error updating remote hashes: {str(e)}")
-            raise
+            
 
     def add_hash(self, new_hash):
         """Add a single hash to the remote file"""

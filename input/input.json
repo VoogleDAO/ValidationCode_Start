@@ -17,7 +17,7 @@
             {"response": "Shakespeare is the author of 'Romeo and Juliet'.", "model": "BERT"}
         ],
         "chosen": 0,
-        "time_taken": 11.001
+        "time_taken": 12.001
     },
     {
         "prompt": "What's the largest planet in our solar system?",
@@ -26,8 +26,8 @@
             {"response": "Jupiter is the largest planet in our solar system.", "model": "GPT-4"},
             {"response": "The largest planet in our solar system is Jupiter.", "model": "GPT-3.5"}
         ],
-        "chosen": 0,
-        "time_taken": 11.001
+        "chosen": 1,
+        "time_taken": 13.001
     },
     {
         "prompt": "What is the capital of France?",
@@ -37,7 +37,7 @@
             {"response": "Paris is the capital city of France.", "model": "GPT-4"}
         ],
         "chosen": 1,
-        "time_taken": 11.001
+        "time_taken": 14.001
     },
     {
         "prompt": "What's the largest planet in our solar system?",
@@ -47,7 +47,7 @@
             {"response": "The largest planet in our solar system is Jupiter.", "model": "GPT-3.5"}
         ],
         "chosen": 1,
-        "time_taken": 11.001
+        "time_taken": 17.001
     },
     {
         "prompt": "What is the capital of France?",
@@ -57,6 +57,6 @@
             {"response": "Paris is the capital city of France.", "model": "GPT-4"}
         ],
         "chosen": 1,
-        "time_taken": 11.001
+        "time_taken": 1.001
     }
 ]
