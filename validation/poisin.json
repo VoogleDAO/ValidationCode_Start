@@ -1,0 +1,62 @@
+[
+    {
+        "prompt": "What is the capital of France?",
+        "uniqueID": 213,
+        "responses": [
+            {"response": "The capital of France is Paris.", "model": "GPT-3.5"},
+            {"response": "Paris is the capital city of France.", "model": "GPT-4"}
+        ],
+        "chosen": 1,
+        "time_taken": 11.001
+    },
+    {
+        "prompt": "Who wrote 'Romeo and Juliet'?",
+        "uniqueID": 214,
+        "responses": [
+            {"response": "William Shakespeare wrote 'Romeo and Juliet'.", "model": "GPT-3.5"},
+            {"response": "Shakespeare is the author of 'Romeo and Juliet'.", "model": "BERT"}
+        ],
+        "chosen": 0,
+        "time_taken": 11.001
+    },
+    {
+        "prompt": "What's the largest planet in our solar system?",
+        "uniqueID": 215,
+        "responses": [
+            {"response": "Jupiter is the largest planet in our solar system.", "model": "GPT-4"},
+            {"response": "The largest planet in our solar system is Jupiter.", "model": "GPT-3.5"}
+        ],
+        "chosen": 0,
+        "time_taken": 11.001
+    },
+    {
+        "prompt": "What is the capital of France?",
+        "uniqueID": 213,
+        "responses": [
+            {"response": "The capital of France is Paris.", "model": "GPT-3.5"},
+            {"response": "Paris is the capital city of France.", "model": "GPT-4"}
+        ],
+        "chosen": 1,
+        "time_taken": 11.001
+    },
+    {
+        "prompt": "What's the largest planet in our solar system?",
+        "uniqueID": 216,
+        "responses": [
+            {"response": "Jupiter is the largest planet in our solar system.", "model": "GPT-4"},
+            {"response": "The largest planet in our solar system is Jupiter.", "model": "GPT-3.5"}
+        ],
+        "chosen": 1,
+        "time_taken": 11.001
+    },
+    {
+        "prompt": "What is the capital of France?",
+        "uniqueID": 218,
+        "responses": [
+            {"response": "The capital of France is Paris.", "model": "GPT-3.5"},
+            {"response": "Paris is the capital city of France.", "model": "GPT-4"}
+        ],
+        "chosen": 1,
+        "time_taken": 11.001
+    }
+]
