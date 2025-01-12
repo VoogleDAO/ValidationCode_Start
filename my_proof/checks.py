@@ -218,25 +218,41 @@ class LocationHistoryValidator:
         
         return valid_modes / total_checked if total_checked > 0 else 1.0
 
-    def validate(self, data: List[Dict[str, Any]]) -> Dict[str, float]:
-        """Run all validation checks and return scores between 0 and 1"""
-        return {
-            "time_order_score": self.check_time_order(data),
-            "speed_score": self.check_suspicious_speed(data),
-            "probability_score": self.check_inconsistent_probabilities(data),
-            "hierarchy_score": self.check_hierarchy_levels(data),
-            "timeline_path_score": self.check_timeline_paths(data),
-            "interval_regularity_score": self.check_for_regular_intervals(data),
-            "travel_mode_score": self.check_local_travel_vs_mode(data)
-        }
+    def check_time_span(self, data: List[Dict[str, Any]]) -> float:
+        if not data:
+            return 0.0
+        
+        # Initialize with None to handle first valid times found
+        earliest_time = None
+        latest_time = None
+        
+        for entry in data:
+            start = self.parse_time(entry.get("startTime"))
+            end = self.parse_time(entry.get("endTime"))
+            
+            if start:
+                if earliest_time is None or start < earliest_time:
+                    earliest_time = start
+            if end:
+                if latest_time is None or end > latest_time:
+                    latest_time = end
+        
+        if earliest_time and latest_time:
+            return ((latest_time - earliest_time).total_seconds())/86400.0
+        return 0.0
+
+    def validate(self, data: List[Dict[str, Any]]) -> float:
+        valid = sum([self.check_time_order(data), self.check_suspicious_speed(data), self.check_inconsistent_probabilities(data), self.check_hierarchy_levels(data), self.check_timeline_paths(data), self.check_for_regular_intervals(data), self.check_local_travel_vs_mode(data)])
+        if valid < 7*0.9:
+            return -1
+        else:
+            return min(self.check_time_span(data)/60.0, 1.0) #max score at 60 days clamped to 1.0
+
 
 if __name__ == "__main__":
-    # Example usage
     with open("location-history.json", "r") as f:
         data = json.load(f)
 
     validator = LocationHistoryValidator()
     results = validator.validate(data)
     
-    for check_name, score in results.items():
-        print(f"{check_name}: {score:.2f}")
