@@ -21,23 +21,22 @@ class Proof:
                 with open(input_file, 'r') as f:
                     input_data = json.load(f)
 
-        print(input_data)
-
         print("Calculating quality score...")
         qualityRes = Quality(input_data)
         print(f"Quality score: {qualityRes}")
+        
+        # Initialize proof response values
+        self.proof_response.score = qualityRes
+        self.proof_response.ownership = 1.0
+        self.proof_response.authenticity = 1.0
+        self.proof_response.uniqueness = 1.0
+        self.proof_response.valid = True  # Set valid to True by default
         
         if qualityRes < 0.0:
             print("Quality check failed, setting valid=False")
             self.proof_response.valid = False
             self.proof_response.score = 0.0
             return self.proof_response
-
-        print("Setting proof response values...")
-        self.proof_response.score = qualityRes
-        self.proof_response.ownership = 1.0
-        self.proof_response.authenticity = 1.0
-        self.proof_response.uniqueness = 1.0
 
         print(f"Final proof response: {self.proof_response.__dict__}")
         return self.proof_response
