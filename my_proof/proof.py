@@ -12,6 +12,8 @@ class Proof:
         self.proof_response = ProofResponse(dlp_id=config['dlp_id'])
 
     def generate(self) -> ProofResponse:
+        
+        input_data = ''
 
         for input_filename in os.listdir(self.config['input_dir']):
             input_file = os.path.join(self.config['input_dir'], input_filename)
