@@ -131,7 +131,6 @@ class LocationHistoryValidator:
     def check_hierarchy_levels(self, data: List[Dict[str, Any]]) -> float:
         if not data:
             return 1.0
-            
         valid_levels = 0
         total_checked = 0
         
