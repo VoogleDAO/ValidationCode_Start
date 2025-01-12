@@ -242,7 +242,7 @@ class LocationHistoryValidator:
 
     def validate(self, data: List[Dict[str, Any]]) -> float:
         valid = sum([self.check_time_order(data), self.check_suspicious_speed(data), self.check_inconsistent_probabilities(data), self.check_hierarchy_levels(data), self.check_timeline_paths(data), self.check_for_regular_intervals(data), self.check_local_travel_vs_mode(data)])
-        if valid < 7*0.9:
+        if valid < (7*0.1):
             return -1
         else:
             return min(self.check_time_span(data)/60.0, 1.0) #max score at 60 days clamped to 1.0
