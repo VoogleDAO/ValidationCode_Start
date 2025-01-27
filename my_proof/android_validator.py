@@ -17,9 +17,7 @@ class AndroidLocationHistoryValidator:
         if not time_str:
             return None
         try:
-            # Android format uses milliseconds
-            if time_str.isdigit():
-                return datetime.fromtimestamp(int(time_str) / 1000)
+            # Android format uses ISO 8601 with timezone
             return parser.parse(time_str)
         except Exception:
             return None
@@ -51,12 +49,12 @@ class AndroidLocationHistoryValidator:
         total_checks = len(data) * 2 - 1  # Two checks per entry plus transitions
         
         for i, entry in enumerate(data):
-            start = self.parse_time(entry.get("startTimestampMs"))
-            end = self.parse_time(entry.get("endTimestampMs"))
+            start = self.parse_time(entry.get("startTime"))
+            end = self.parse_time(entry.get("endTime"))
             if start and end and end < start:
                 issues += 1
             if i < len(data) - 1:
-                next_start = self.parse_time(data[i + 1].get("startTimestampMs"))
+                next_start = self.parse_time(data[i + 1].get("startTime"))
                 if end and next_start and next_start < end:
                     issues += 1
         
@@ -73,8 +71,8 @@ class AndroidLocationHistoryValidator:
             if "activities" in entry and entry["activities"]:
                 total_checked += 1
                 distance = entry.get("distance", 0)
-                start_time = self.parse_time(entry.get("startTimestampMs"))
-                end_time = self.parse_time(entry.get("endTimestampMs"))
+                start_time = self.parse_time(entry.get("startTime"))
+                end_time = self.parse_time(entry.get("endTime"))
 
                 try:
                     dist_m = float(distance) if distance else 0.0
@@ -158,8 +156,8 @@ class AndroidLocationHistoryValidator:
             
         intervals = []
         for i in range(len(data) - 1):
-            end_cur = self.parse_time(data[i].get("endTimestampMs"))
-            start_next = self.parse_time(data[i + 1].get("startTimestampMs"))
+            end_cur = self.parse_time(data[i].get("endTime"))
+            start_next = self.parse_time(data[i + 1].get("startTime"))
             if end_cur and start_next:
                 intervals.append((start_next - end_cur).total_seconds())
 
@@ -184,8 +182,8 @@ class AndroidLocationHistoryValidator:
                     continue
                     
                 total_checked += 1
-                start_time = self.parse_time(entry["activitySegment"].get("startTimestampMs"))
-                end_time = self.parse_time(entry["activitySegment"].get("endTimestampMs"))
+                start_time = self.parse_time(entry["activitySegment"].get("startTime"))
+                end_time = self.parse_time(entry["activitySegment"].get("endTime"))
                 
                 try:
                     dist_m = float(entry["activitySegment"].get("distance", 0))
@@ -208,8 +206,8 @@ class AndroidLocationHistoryValidator:
         latest_time = None
         
         for entry in data:
-            start = self.parse_time(entry.get("startTimestampMs"))
-            end = self.parse_time(entry.get("endTimestampMs"))
+            start = self.parse_time(entry.get("startTime"))
+            end = self.parse_time(entry.get("endTime"))
             
             if start:
                 if earliest_time is None or start < earliest_time:
@@ -222,9 +220,9 @@ class AndroidLocationHistoryValidator:
             return ((latest_time - earliest_time).total_seconds())/86400.0
         return 0.0
 
-    def validate(self, data: Dict[str, Any]) -> float:
-        # Extract semantic segments from the Android JSON structure
-        segments = data.get('semanticSegments')
+    def validate(self, data: List[Dict[str, Any]]) -> float:
+        # Android data is already a list of segments
+        segments = data
         print(f"\nStarting validation with {len(segments)} segments")
         
         checks = [

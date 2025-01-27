@@ -62,7 +62,9 @@ def Quality(data_list: Union[List[Dict[str, Any]], Dict[str, Any]]) -> float:
         # Android format
         print("Detected Android format data")
         validator = AndroidLocationHistoryValidator(max_speed_m_s=44.44)
-        result = validator.validate(data_list)
+        # Extract the list from semanticSegments
+        segments = data_list["semanticSegments"]
+        result = validator.validate(segments)
     elif isinstance(data_list, list):
         # iOS format
         print("Detected iOS format data")
@@ -71,7 +73,7 @@ def Quality(data_list: Union[List[Dict[str, Any]], Dict[str, Any]]) -> float:
     else:
         print("Error: Unrecognized data format")
         print("Data must be either:")
-        print("1. A dictionary containing 'timelineObjects' key (Android)")
+        print("1. A dictionary containing 'semanticSegments' key (Android)")
         print("2. A list of location entries (iOS)")
         return -1
     
