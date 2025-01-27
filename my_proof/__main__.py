@@ -8,7 +8,9 @@ from typing import Dict, Any
 
 from my_proof.proof import Proof
 
-INPUT_DIR, OUTPUT_DIR = '/input', '/output'
+# TODO: Put this back to /input and /output
+# INPUT_DIR, OUTPUT_DIR = '/input', '/output'
+INPUT_DIR, OUTPUT_DIR = 'input', 'output'
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 

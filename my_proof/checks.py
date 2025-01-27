@@ -42,10 +42,15 @@ class LocationHistoryValidator:
 
     @staticmethod
     def parse_geo_string(geo_str: str) -> Optional[tuple]:
-        if not geo_str or "geo:" not in geo_str:
+        if not geo_str:
             return None
         try:
-            coords = geo_str.split("geo:")[1]
+            if "geo:" in geo_str:
+                # iOS format
+                coords = geo_str.split("geo:")[1]
+            else:
+                # Android format
+                coords = geo_str.replace("°", "")
             lat_str, lon_str = coords.split(",")
             return float(lat_str), float(lon_str)
         except Exception:
