@@ -1,9 +1,10 @@
 import json
 import logging
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union
 from my_proof.models.proof_response import ProofResponse
-from my_proof.checks import *
+from .checks import LocationHistoryValidator
+from .android_validator import AndroidLocationHistoryValidator
 
 class Proof:
     def __init__(self, config: Dict[str, Any]):
@@ -13,13 +14,20 @@ class Proof:
 
     def generate(self) -> ProofResponse:
         print("Starting generate method")
-        input_data = ''
+        input_data = None
         for input_filename in os.listdir(self.config['input_dir']):
             input_file = os.path.join(self.config['input_dir'], input_filename)
             if os.path.splitext(input_file)[1].lower() == '.zip':
                 print(f"Reading file: {input_file}")
-                with open(input_file, 'r') as f:
+                # Read as regular JSON file despite .zip extension
+                with open(input_file, 'r', encoding='utf-8') as f:
                     input_data = json.load(f)
+
+        if input_data is None:
+            print("No valid JSON data found")
+            self.proof_response.valid = False
+            self.proof_response.score = 0.0
+            return self.proof_response
 
         print("Calculating quality score...")
         qualityRes = Quality(input_data)
@@ -41,9 +49,31 @@ class Proof:
         print(f"Final proof response: {self.proof_response.__dict__}")
         return self.proof_response
 
-def Quality(data_list: List[Dict[str, Any]]) -> float:
+def Quality(data_list: Union[List[Dict[str, Any]], Dict[str, Any]]) -> float:
     print("Starting Quality check")
-    report = LocationHistoryValidator(max_speed_m_s=44.44)
-    result = report.validate(data_list)
+    
+    # Debug prints
+    print(f"Type of data_list: {type(data_list)}")
+    if isinstance(data_list, dict):
+        print(f"Keys in data_list: {list(data_list.keys())}")
+    
+    # Detect data format
+    if isinstance(data_list, dict) and "semanticSegments" in data_list:
+        # Android format
+        print("Detected Android format data")
+        validator = AndroidLocationHistoryValidator(max_speed_m_s=44.44)
+        result = validator.validate(data_list)
+    elif isinstance(data_list, list):
+        # iOS format
+        print("Detected iOS format data")
+        validator = LocationHistoryValidator(max_speed_m_s=44.44)
+        result = validator.validate(data_list)
+    else:
+        print("Error: Unrecognized data format")
+        print("Data must be either:")
+        print("1. A dictionary containing 'timelineObjects' key (Android)")
+        print("2. A list of location entries (iOS)")
+        return -1
+    
     print(f"Quality validation result: {result}")
     return result
