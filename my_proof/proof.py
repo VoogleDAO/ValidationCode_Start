@@ -51,31 +51,35 @@ class Proof:
 
 def Quality(data_list: Union[List[Dict[str, Any]], Dict[str, Any]]) -> float:
     print("Starting Quality check")
-    
-    # Debug prints
-    print(f"Type of data_list: {type(data_list)}")
-    if isinstance(data_list, dict):
-        print(f"Keys in data_list: {list(data_list.keys())}")
-    
-    # Detect data format
-    if isinstance(data_list, dict) and "semanticSegments" in data_list:
-        # Android format
-        print("Detected Android format data")
-        validator = AndroidLocationHistoryValidator(max_speed_m_s=44.44)
-        # Extract the list from semanticSegments
-        segments = data_list["semanticSegments"]
-        result = validator.validate(segments)
-    elif isinstance(data_list, list):
-        # iOS format
-        print("Detected iOS format data")
-        validator = LocationHistoryValidator(max_speed_m_s=44.44)
-        result = validator.validate(data_list)
-    else:
-        print("Error: Unrecognized data format")
-        print("Data must be either:")
-        print("1. A dictionary containing 'semanticSegments' key (Android)")
-        print("2. A list of location entries (iOS)")
+
+    try:
+        # Debug prints
+        print(f"Type of data_list: {type(data_list)}")
+        if isinstance(data_list, dict):
+            print(f"Keys in data_list: {list(data_list.keys())}")
+        
+        # Detect data format
+        if isinstance(data_list, dict) and "semanticSegments" in data_list:
+            # Android format
+            print("Detected Android format data")
+            validator = AndroidLocationHistoryValidator(max_speed_m_s=44.44)
+            # Extract the list from semanticSegments
+            segments = data_list["semanticSegments"]
+            result = validator.validate(segments)
+        elif isinstance(data_list, list):
+            # iOS format
+            print("Detected iOS format data")
+            validator = LocationHistoryValidator(max_speed_m_s=44.44)
+            result = validator.validate(data_list)
+        else:
+            print("Error: Unrecognized data format")
+            print("Data must be either:")
+            print("1. A dictionary containing 'semanticSegments' key (Android)")
+            print("2. A list of location entries (iOS)")
+            return -1
+        
+        print(f"Quality validation result: {result}")
+        return result
+    except Exception as e:
+        print(f"Error in Quality check: {e}")
         return -1
-    
-    print(f"Quality validation result: {result}")
-    return result
