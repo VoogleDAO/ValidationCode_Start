@@ -8,9 +8,13 @@ from typing import Dict, Any
 
 from my_proof.proof import Proof
 
-# TODO: Put this back to /input and /output
-# INPUT_DIR, OUTPUT_DIR = '/input', '/output'
-INPUT_DIR, OUTPUT_DIR = 'input', 'output'
+
+IS_LOCAL = os.environ.get('IS_LOCAL', 'false').lower() == 'true'
+if IS_LOCAL:
+    INPUT_DIR, OUTPUT_DIR = 'input', 'output'
+else:
+    # absolute path to match docker conventions
+    INPUT_DIR, OUTPUT_DIR = '/input', '/output'
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
