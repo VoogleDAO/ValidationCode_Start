@@ -1,6 +1,6 @@
 
 .DS_Store
-.venv/
+venv/
 __pycache__/
 android.zip
 ios.zip
