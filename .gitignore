@@ -1,2 +1,8 @@
 
 .DS_Store
+venv/
+__pycache__/
+android.zip
+ios.zip
+*.zip
+output/

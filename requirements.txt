@@ -3,3 +3,4 @@ requests
 boto3
 python-gnupg
 pgpy
+python-dateutil

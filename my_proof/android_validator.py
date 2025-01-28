@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional, Union
 from collections import Counter
 from dateutil import parser
 
-class LocationHistoryValidator:
+class AndroidLocationHistoryValidator:
     def __init__(self, max_speed_m_s: float = 44.44, allowed_hierarchy_levels: List[int] = [0, 1, 2]):
         self.max_speed_m_s = max_speed_m_s
         self.allowed_hierarchy_levels = allowed_hierarchy_levels
@@ -17,6 +17,7 @@ class LocationHistoryValidator:
         if not time_str:
             return None
         try:
+            # Android format uses ISO 8601 with timezone
             return parser.parse(time_str)
         except Exception:
             return None
@@ -39,22 +40,6 @@ class LocationHistoryValidator:
             return 0.0
         dt = (t2 - t1).total_seconds()
         return distance_meters / dt if dt > 0 else 0.0
-
-    @staticmethod
-    def parse_geo_string(geo_str: str) -> Optional[tuple]:
-        if not geo_str:
-            return None
-        try:
-            if "geo:" in geo_str:
-                # iOS format
-                coords = geo_str.split("geo:")[1]
-            else:
-                # Android format
-                coords = geo_str.replace("°", "")
-            lat_str, lon_str = coords.split(",")
-            return float(lat_str), float(lon_str)
-        except Exception:
-            return None
 
     def check_time_order(self, data: List[Dict[str, Any]]) -> float:
         if not data:
@@ -83,15 +68,14 @@ class LocationHistoryValidator:
         total_checked = 0
         
         for entry in data:
-            if "activity" in entry:
+            if "activities" in entry and entry["activities"]:
                 total_checked += 1
-                activity = entry["activity"]
-                distance_str = activity.get("distanceMeters")
+                distance = entry.get("distance", 0)
                 start_time = self.parse_time(entry.get("startTime"))
                 end_time = self.parse_time(entry.get("endTime"))
 
                 try:
-                    dist_m = float(distance_str) if distance_str else 0.0
+                    dist_m = float(distance) if distance else 0.0
                 except ValueError:
                     dist_m = 0.0
 
@@ -109,23 +93,12 @@ class LocationHistoryValidator:
         total_probs = 0
         
         for entry in data:
-            for key in ["activity", "visit"]:
-                if key in entry:
-                    # Check main probability
-                    if "probability" in entry[key]:
+            if "activities" in entry:
+                for activity in entry["activities"]:
+                    if "probability" in activity:
                         total_probs += 1
                         try:
-                            prob = float(entry[key]["probability"])
-                            if 0.0 <= prob <= 1.0:
-                                valid_probs += 1
-                        except ValueError:
-                            pass
-                            
-                    # Check topCandidate probability
-                    if "topCandidate" in entry[key] and "probability" in entry[key]["topCandidate"]:
-                        total_probs += 1
-                        try:
-                            prob = float(entry[key]["topCandidate"]["probability"])
+                            prob = float(activity["probability"])
                             if 0.0 <= prob <= 1.0:
                                 valid_probs += 1
                         except ValueError:
@@ -140,18 +113,20 @@ class LocationHistoryValidator:
         total_checked = 0
         
         for entry in data:
-            if "visit" in entry and "hierarchyLevel" in entry["visit"]:
-                total_checked += 1
-                try:
-                    hl = int(entry["visit"]["hierarchyLevel"])
-                    if hl in self.allowed_hierarchy_levels:
-                        valid_levels += 1
-                except ValueError:
-                    pass
+            if "placeVisit" in entry:
+                place = entry["placeVisit"].get("location", {})
+                if "locationConfidence" in place:
+                    total_checked += 1
+                    try:
+                        confidence = float(place["locationConfidence"])
+                        if 0.0 <= confidence <= 1.0:
+                            valid_levels += 1
+                    except ValueError:
+                        pass
         
         return valid_levels / total_checked if total_checked > 0 else 1.0
 
-    def check_timeline_paths(self, data: List[Dict[str, Any]]) -> float:
+    def check_waypoints(self, data: List[Dict[str, Any]]) -> float:
         if not data:
             return 1.0
             
@@ -159,18 +134,19 @@ class LocationHistoryValidator:
         total_points = 0
         
         for entry in data:
-            if "timelinePath" in entry and isinstance(entry["timelinePath"], list):
-                for path_node in entry["timelinePath"]:
-                    total_points += 2  # Two checks per point
+            if "activitySegment" in entry:
+                waypoints = entry["activitySegment"].get("waypointPath", {}).get("waypoints", [])
+                for waypoint in waypoints:
+                    total_points += 2  # Two checks per point: lat and lng
                     
-                    if self.parse_geo_string(path_node.get("point", "")):
-                        valid_points += 1
-                        
-                    try:
-                        float(path_node.get("durationMinutesOffsetFromStartTime"))
-                        valid_points += 1
-                    except (TypeError, ValueError):
-                        pass
+                    if "latE7" in waypoint and "lngE7" in waypoint:
+                        try:
+                            lat = float(waypoint["latE7"]) / 1e7
+                            lng = float(waypoint["lngE7"]) / 1e7
+                            if -90 <= lat <= 90 and -180 <= lng <= 180:
+                                valid_points += 2
+                        except ValueError:
+                            pass
         
         return valid_points / total_points if total_points > 0 else 1.0
 
@@ -200,24 +176,24 @@ class LocationHistoryValidator:
         total_checked = 0
         
         for entry in data:
-            if "activity" in entry and "topCandidate" in entry["activity"]:
-                mode = entry["activity"]["topCandidate"].get("type", "").lower()
-                if not (mode and ("walk" in mode or "run" in mode)):
+            if "activitySegment" in entry:
+                activity_type = entry["activitySegment"].get("activityType", "").lower()
+                if not (activity_type and ("walking" in activity_type or "running" in activity_type)):
                     continue
                     
                 total_checked += 1
-                start_time = self.parse_time(entry.get("startTime"))
-                end_time = self.parse_time(entry.get("endTime"))
+                start_time = self.parse_time(entry["activitySegment"].get("startTime"))
+                end_time = self.parse_time(entry["activitySegment"].get("endTime"))
                 
                 try:
-                    dist_m = float(entry["activity"].get("distanceMeters", 0))
+                    dist_m = float(entry["activitySegment"].get("distance", 0))
                 except ValueError:
                     dist_m = 0.0
 
                 speed = self.calc_speed(dist_m, start_time, end_time)
                 
-                if ("walk" in mode and speed <= self.max_walk_speed) or \
-                   ("run" in mode and speed <= self.max_run_speed):
+                if ("walking" in activity_type and speed <= self.max_walk_speed) or \
+                   ("running" in activity_type and speed <= self.max_run_speed):
                     valid_modes += 1
         
         return valid_modes / total_checked if total_checked > 0 else 1.0
@@ -226,7 +202,6 @@ class LocationHistoryValidator:
         if not data:
             return 0.0
         
-        # Initialize with None to handle first valid times found
         earliest_time = None
         latest_time = None
         
@@ -246,16 +221,18 @@ class LocationHistoryValidator:
         return 0.0
 
     def validate(self, data: List[Dict[str, Any]]) -> float:
-        print(f"\nStarting validation with {len(data)} entries")
+        # Android data is already a list of segments
+        segments = data
+        print(f"\nStarting validation with {len(segments)} segments")
         
         checks = [
-            ("Time Order", self.check_time_order(data)),
-            ("Suspicious Speed", self.check_suspicious_speed(data)),
-            ("Probabilities", self.check_inconsistent_probabilities(data)),
-            ("Hierarchy Levels", self.check_hierarchy_levels(data)),
-            ("Timeline Paths", self.check_timeline_paths(data)),
-            ("Regular Intervals", self.check_for_regular_intervals(data)),
-            ("Local Travel", self.check_local_travel_vs_mode(data))
+            ("Time Order", self.check_time_order(segments)),
+            ("Suspicious Speed", self.check_suspicious_speed(segments)),
+            ("Probabilities", self.check_inconsistent_probabilities(segments)),
+            ("Hierarchy Levels", self.check_hierarchy_levels(segments)),
+            ("Waypoints", self.check_waypoints(segments)),
+            ("Regular Intervals", self.check_for_regular_intervals(segments)),
+            ("Local Travel", self.check_local_travel_vs_mode(segments))
         ]
         
         print("\nIndividual check results:")
@@ -270,7 +247,7 @@ class LocationHistoryValidator:
             print("Failed validation - returning -1")
             return -1
         
-        time_span = self.check_time_span(data)
+        time_span = self.check_time_span(segments)
         print(f"\nTime span in days: {time_span:.2f}")
         print(f"Time span score (divided by 60): {time_span/60.0:.3f}")
         
@@ -281,10 +258,9 @@ class LocationHistoryValidator:
 
 
 if __name__ == "__main__":
-    with open("location-history.json", "r") as f:
+    with open("android-location-history.json", "r") as f:
         data = json.load(f)
 
-    validator = LocationHistoryValidator()
+    validator = AndroidLocationHistoryValidator()
     results = validator.validate(data)
-    print(results)
-    
+    print(results) 
